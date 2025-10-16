@@ -7,12 +7,15 @@ import sqlite3
 import uuid
 from contextlib import asynccontextmanager
 from typing import List, Optional
-
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from minio import Minio
 from minio.error import S3Error
 from pydantic import BaseModel
+import urllib3
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Configuration
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
@@ -22,12 +25,17 @@ MINIO_BUCKET = os.getenv("MINIO_BUCKET", "files")
 MINIO_SECURE = os.getenv("MINIO_SECURE", "false").lower() == "true"
 DATABASE_PATH = os.getenv("DATABASE_PATH", "files.db")
 
+http_client = None
+if os.getenv("MINIO_INSECURE_TLS") == "1":
+    http_client = urllib3.PoolManager(cert_reqs="CERT_NONE")
+
 # MinIO client
 minio_client = Minio(
-    MINIO_ENDPOINT,
+    endpoint=MINIO_ENDPOINT,
     access_key=MINIO_ACCESS_KEY,
     secret_key=MINIO_SECRET_KEY,
-    secure=MINIO_SECURE
+    secure=MINIO_SECURE,
+    http_client=http_client
 )
 
 
