@@ -1,10 +1,9 @@
-from collections.abc import Iterator
 import io
 import uuid
-from fastapi import UploadFile
-from fastapi.responses import StreamingResponse
-from minio import Minio, S3Error, S3Error
 import urllib3
+from fastapi import UploadFile
+from collections.abc import Iterator
+from minio import Minio, S3Error, S3Error
 
 
 def get_client(MINIO_INSECURE_TLS: int, MINIO_ENDPOINT: str, MINIO_ACCESS_KEY: str, MINIO_SECRET_KEY: str, MINIO_SECURE: bool):
@@ -49,13 +48,14 @@ async def upload_file_to_minio(
         MINIO_SECRET_KEY: str, 
         MINIO_SECURE: bool, 
         MINIO_BUCKET: str, 
-        file: UploadFile, 
-        object_key: str
+        file: UploadFile
     ):
-    object_key = f"{uuid.uuid4()}_{file.filename}"
+    file_extension = file.filename.split(".")[-1]
+    object_key = f"{uuid.uuid4()}_file.{file_extension}"
     
     file_content = await file.read()
     file_size = len(file_content)
+    content_type = file.content_type or "application/octet-stream"
     minio_client = get_client(MINIO_INSECURE_TLS, MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_SECURE)
 
     minio_client.put_object(
@@ -63,10 +63,10 @@ async def upload_file_to_minio(
         object_key,
         io.BytesIO(file_content),
         length=file_size,
-        content_type=file.content_type or "application/octet-stream"
+        content_type=content_type
     )
 
-    return (file.filename, object_key, file_size, file.content_type)
+    return (file.filename, object_key, file_size, content_type)
 
 def download_file_from_minio(
         MINIO_INSECURE_TLS: int, 

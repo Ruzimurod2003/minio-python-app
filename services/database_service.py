@@ -72,7 +72,7 @@ def get_file_metadata(DATABASE_PATH: str, file_id: int) -> Optional[FileMetadata
     conn = get_db_connection(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT file_name, minio_object_key, content_type FROM files WHERE id = ?",
+        "SELECT file_name, minio_object_key, content_type, created_at, size FROM files WHERE id = ?",
         (file_id,)
     )
     row = cursor.fetchone()
@@ -85,7 +85,9 @@ def get_file_metadata(DATABASE_PATH: str, file_id: int) -> Optional[FileMetadata
         id=file_id,
         file_name=row["file_name"],
         minio_object_key=row["minio_object_key"],
-        content_type=row["content_type"]
+        content_type=row["content_type"],
+        created_at=row["created_at"],
+        size=row["size"]
     )    
 
 def delete_file_metadata(DATABASE_PATH: str, file_id: int) -> bool:
